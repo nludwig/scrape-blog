@@ -125,7 +125,9 @@ def scrape_page(url=None, headers=None, html_parser='html.parser'):
     )
     entry_content = entry_content[0]
 
-    return entry_title, [paragraph for paragraph in entry_content.text.split('\n')]
+    paragraphs = entry_content.find_all('p')
+
+    return entry_title, [paragraph.text for paragraph in paragraphs]
 
 
 def scrape_pages(urls=[], headers=None, html_parser='html.parser'):
