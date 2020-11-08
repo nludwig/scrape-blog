@@ -18,7 +18,7 @@ DEFAULT_TEST_URLS = [
 ]
 
 
-def get_entry_content(url=None, headers=None, html_parser='html.parser'):
+def get_entry(url=None, headers=None, html_parser='html.parser'):
     """Get entry content of page."""
     # Defaults for testing.
     if url is None:
@@ -33,9 +33,10 @@ def get_entry_content(url=None, headers=None, html_parser='html.parser'):
     html = BeautifulSoup(resp.text, html_parser)
 
     div_tag = html.div
+    entry_title = div_tag(attrs={'class': 'entry-header'})[0].h1.string
     entry_content = div_tag(attrs={'class': 'entry-content'})
 
-    return entry_content
+    return entry_title, entry_content
 
 
 def get_links(url=None, headers=None, html_parser='html.parser'):
@@ -46,11 +47,12 @@ def get_links(url=None, headers=None, html_parser='html.parser'):
     if headers is None:
         headers = DEFAULT_HEADERS
 
-    entry_content = get_entry_content(
+    _, entry_content = get_entry(
             url=url,
             headers=headers,
             html_parser=html_parser,
-    )[0]
+    )
+    entry_content = entry_content[0]
 
     html_links = entry_content.find_all('a')
     links = [html_link.get('href') for html_link in html_links]
@@ -116,13 +118,14 @@ def scrape_page(url=None, headers=None, html_parser='html.parser'):
     if headers is None:
         headers = DEFAULT_HEADERS
 
-    entry_content = get_entry_content(
+    entry_title, entry_content = get_entry(
             url=url,
             headers=headers,
             html_parser=html_parser,
-    )[0]
+    )
+    entry_content = entry_content[0]
 
-    return [paragraph for paragraph in entry_content.text.split('\n')]
+    return entry_title, [paragraph for paragraph in entry_content.text.split('\n')]
 
 
 def scrape_pages(urls=[], headers=None, html_parser='html.parser'):
@@ -159,16 +162,16 @@ def main():
     urls = cull_links(urls)
     logging.info('Post-culling URLs:\n%s', '\n'.join(urls))
 
-    paras_generator = scrape_pages(urls)
+    pages_generator = scrape_pages(urls)
 
     doc = None
-    for paras in paras_generator:
-        doc = format_paragraphs_to_docx(paras, doc=doc)
+    for title, paras in pages_generator:
+        doc = format_paragraphs_to_docx(title, paras, doc=doc)
 
     if args.out is not None:
         doc.save(args.out)
     else:
-        doc.save('scraped-site.docx')
+        doc.save('site.docx')
 
 
 if __name__ == '__main__':

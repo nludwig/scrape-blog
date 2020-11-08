@@ -52,13 +52,13 @@ def main():
     pages_generator = scrape.scrape_pages(culled_urls)
 
     doc = None
-    for pages in pages_generator:
-        doc = f.format_paragraphs_to_docx(pages, doc=doc)
+    for title, paras in pages_generator:
+        doc = f.format_paragraphs_to_docx(title, paras, doc=doc)
 
     if args.out is not None:
         doc.save(args.out)
     else:
-        doc.save('scraped-site.docx')
+        doc.save('site.docx')
 
 
 if __name__ == '__main__':
