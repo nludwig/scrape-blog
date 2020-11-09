@@ -31,8 +31,9 @@ def main():
     else:
         log_level = logging.INFO
     logging.basicConfig(
-            format='[%(asctime)s] [%(funcName)s]: %(message)s',
-            level=log_level,
+            format='[%(asctime)s] [%(levelname)s] [%(funcName)s]:'
+                   ' %(message)s',
+            level=logging.INFO,
     )
 
     blog_post_urls = scrape.get_links()
@@ -53,6 +54,7 @@ def main():
 
     doc = None
     for title, paras in pages_generator:
+        paras = scrape.textify_text_imgify_imgs(paras)
         doc = f.format_paragraphs_to_docx(title, paras, doc=doc)
 
     if args.out is not None:

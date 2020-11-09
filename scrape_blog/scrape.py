@@ -2,6 +2,8 @@
 
 import argparse
 import logging
+import shutil
+import tempfile
 
 from bs4 import BeautifulSoup
 import requests
@@ -127,7 +129,7 @@ def scrape_page(url=None, headers=None, html_parser='html.parser'):
 
     paragraphs = entry_content.find_all('p')
 
-    return entry_title, [paragraph.text for paragraph in paragraphs]
+    return entry_title, paragraphs
 
 
 def scrape_pages(urls=[], headers=None, html_parser='html.parser'):
@@ -142,6 +144,66 @@ def scrape_pages(urls=[], headers=None, html_parser='html.parser'):
         yield scrape_page(url=url, headers=headers, html_parser=html_parser)
 
 
+def textify_text_imgify_imgs(
+        paragraphs,
+        headers=None,
+        image_patterns_to_remove=None
+):
+    """
+    Assume all paragraphs are either text or images and yield these
+    (preferring text).
+    """
+
+    # Defaults for testing.
+    if image_patterns_to_remove is None:
+        image_patterns_to_remove = (
+                'amazon-adsystem',
+        )
+    if headers is None:
+        headers = DEFAULT_HEADERS
+
+    for paragraph in paragraphs:
+        if paragraph.text != '':
+            yield paragraph.text
+        else:
+            logging.info('Got non-text paragraph: %s', paragraph)
+            img_html = paragraph.find('img')
+            if img_html is not None:
+                src_url = img_html['src']
+                for pattern in image_patterns_to_remove:
+                    if pattern in src_url:
+                        logging.info(
+                                'Excluding img url %s: got pattern %s',
+                                src_url,
+                                pattern,
+                        )
+                        src_url = None
+                        break
+
+                if src_url is not None:
+                    response = requests.get(
+                            src_url,
+                            headers=headers,
+                            stream=True,
+                    )
+                    if response.status_code == 200:
+                        f = tempfile.TemporaryFile()
+                        response.raw.decode_content = True
+                        shutil.copyfileobj(response.raw, f)
+                        yield {'img': f, 'width': img_html.get('width')}
+                    else:
+                        logging.error(
+                                'Could not get image from %s; code %d',
+                                src_url,
+                                response.status_code,
+                        )
+                        yield None
+                else:
+                    yield None
+            else:
+                yield None
+
+
 def main():
     from format import format_paragraphs_to_docx
     parser = argparse.ArgumentParser()
@@ -150,7 +212,8 @@ def main():
     args = parser.parse_args()
 
     logging.basicConfig(
-            format='[%(asctime)s] [%(funcName)s]: %(message)s',
+            format='[%(asctime)s] [%(levelname)s] [%(funcName)s]:'
+                   ' %(message)s',
             level=logging.INFO,
     )
 
@@ -168,6 +231,7 @@ def main():
 
     doc = None
     for title, paras in pages_generator:
+        paras = textify_text_imgify_imgs(paras)
         doc = format_paragraphs_to_docx(title, paras, doc=doc)
 
     if args.out is not None:
