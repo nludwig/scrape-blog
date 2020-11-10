@@ -2,9 +2,12 @@ import logging
 
 from docx import Document
 
-def format_paragraphs_to_docx(title, paras, doc=None):
+def format_paragraphs_to_docx(title, paras, doc=None, super_title=None):
     if doc is None:
         doc = Document()
+        if super_title is not None:
+            doc.add_heading(super_title, 0)
+            doc.add_page_break()
 
     doc.add_heading(title)
 

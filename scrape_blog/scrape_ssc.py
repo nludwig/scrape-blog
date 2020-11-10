@@ -24,6 +24,16 @@ def main():
             type=bool,
             default=True,
     )
+    parser.add_argument(
+            '-r',
+            '--require',
+            help='Required patterns for links; can pass repeatedly.',
+            action='append',
+    )
+    parser.add_argument(
+            '--title',
+            help='Title for document produced by scrape.',
+    )
     args = parser.parse_args()
 
     if args.test is True:
@@ -38,7 +48,10 @@ def main():
 
     blog_post_urls = scrape.get_links()
 
-    culled_urls = scrape.cull_links(blog_post_urls)
+    culled_urls = scrape.cull_links(
+            blog_post_urls,
+            required_patterns=args.require,
+    )
 
     # Put into time-increasing order.
     culled_urls.reverse()
@@ -55,7 +68,12 @@ def main():
     doc = None
     for title, paras in pages_generator:
         paras = scrape.textify_text_imgify_imgs(paras)
-        doc = f.format_paragraphs_to_docx(title, paras, doc=doc)
+        doc = f.format_paragraphs_to_docx(
+                title,
+                paras,
+                doc=doc,
+                super_title=args.title,
+        )
 
     if args.out is not None:
         doc.save(args.out)

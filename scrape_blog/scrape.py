@@ -72,6 +72,7 @@ def cull_links(
     ),
     remove_none=True,
     remove_only_year=True,
+    required_patterns=tuple(),
 ):
     num_input_links = len(links)
     logging.info('Got %d links input.', num_input_links)
@@ -98,6 +99,13 @@ def cull_links(
             if pattern in link:
                 removed_links.append(link)
                 del links[i]
+
+    if required_patterns:
+        for pattern in required_patterns:
+            for i, link in enumerate(links):
+                if pattern not in link:
+                    removed_links.append(link)
+                    del links[i]
 
     logging.info(
             'Returning %d links; %d culled.',
