@@ -171,8 +171,8 @@ def textify_text_imgify_imgs(
         image_patterns_to_remove=None
 ):
     """
-    Assume all paragraphs are either text or images and yield these
-    (preferring text).
+    Assume all paragraphs may contain images and/or text and yield these
+    (images yielded first).
     """
 
     # Defaults for testing.
@@ -184,45 +184,42 @@ def textify_text_imgify_imgs(
         headers = DEFAULT_HEADERS
 
     for paragraph in paragraphs:
-        if paragraph.text != '':
-            yield paragraph.text
-        else:
-            logging.info('Got non-text paragraph: %s', paragraph)
-            img_html = paragraph.find('img')
-            if img_html is not None:
-                src_url = img_html['src']
-                for pattern in image_patterns_to_remove:
-                    if pattern in src_url:
-                        logging.info(
-                                'Excluding img url %s: got pattern %s',
-                                src_url,
-                                pattern,
-                        )
-                        src_url = None
-                        break
-
-                if src_url is not None:
-                    response = requests.get(
+        img_html = paragraph.find('img')
+        if img_html is not None:
+            src_url = img_html['src']
+            for pattern in image_patterns_to_remove:
+                if pattern in src_url:
+                    logging.info(
+                            'Excluding img url %s: got pattern %s',
                             src_url,
-                            headers=headers,
-                            stream=True,
+                            pattern,
                     )
-                    if response.status_code == 200:
-                        f = tempfile.TemporaryFile()
-                        response.raw.decode_content = True
-                        shutil.copyfileobj(response.raw, f)
-                        yield {'img': f, 'width': img_html.get('width')}
-                    else:
-                        logging.error(
-                                'Could not get image from %s; code %d',
-                                src_url,
-                                response.status_code,
-                        )
-                        yield None
+                    src_url = None
+                    break
+
+            if src_url is not None:
+                response = requests.get(
+                        src_url,
+                        headers=headers,
+                        stream=True,
+                )
+                if response.status_code == 200:
+                    f = tempfile.TemporaryFile()
+                    response.raw.decode_content = True
+                    shutil.copyfileobj(response.raw, f)
+                    yield {'img': f, 'width': img_html.get('width')}
                 else:
+                    logging.error(
+                            'Could not get image from %s; code %d',
+                            src_url,
+                            response.status_code,
+                    )
                     yield None
             else:
                 yield None
+
+        if paragraph.text != '':
+            yield paragraph.text
 
 
 def main():
