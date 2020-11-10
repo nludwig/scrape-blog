@@ -80,32 +80,45 @@ def cull_links(
     removed_links = []
 
     if remove_none is True:
-        for i, link in enumerate(links):
-            if link is None:
+        i = 0
+        while i < len(links):
+            if links[i] is None:
                 del links[i]
+            else:
+                i += 1
 
     if remove_only_year is True:
-        for i, link in enumerate(links):
-            if len(link.split(sep='/')) == 4 or len(link.split(sep='/')) == 5:
+        i = 0
+        while i < len(links):
+            if len(links[i].split(sep='/')) == 4 \
+                    or len(links[i].split(sep='/')) == 5:
                 # Remove links of form
                 #  https://slatestarcodex.com/2020/
                 #  which splits to:
                 #  ['https:', '', 'slatestarcodex.com', '2020', '']
-                removed_links.append(link)
+                removed_links.append(links[i])
                 del links[i]
+            else:
+                i += 1
 
-    for i, link in enumerate(links):
-        for pattern in patterns_to_remove:
-            if pattern in link:
-                removed_links.append(link)
+    for pattern in patterns_to_remove:
+        i = 0
+        while i < len(links):
+            if pattern in links[i]:
+                removed_links.append(links[i])
                 del links[i]
+            else:
+                i += 1
 
     if required_patterns:
         for pattern in required_patterns:
-            for i, link in enumerate(links):
-                if pattern not in link:
-                    removed_links.append(link)
+            i = 0
+            while i < len(links):
+                if pattern not in links[i]:
+                    removed_links.append(links[i])
                     del links[i]
+                else:
+                    i += 1
 
     logging.info(
             'Returning %d links; %d culled.',
