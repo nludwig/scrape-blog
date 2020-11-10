@@ -12,6 +12,18 @@ import scrape
 NUM_TEST_URLS = 10
 
 
+# https://stackoverflow.com/a/43357954
+def str2bool(v):
+    if isinstance(v, bool):
+       return v
+    if v.lower() in ('yes', 'true', 't', 'y', '1'):
+        return True
+    elif v.lower() in ('no', 'false', 'f', 'n', '0'):
+        return False
+    else:
+        raise argparse.ArgumentTypeError('Boolean value expected.')
+
+
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument(
@@ -21,7 +33,7 @@ def main():
     parser.add_argument(
             '--test',
             help='Test? -> only grab first {NUM_TEST_URLS} URLs.',
-            type=bool,
+            type=str2bool,
             default=True,
     )
     parser.add_argument(
