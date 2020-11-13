@@ -14,8 +14,21 @@ def format_paragraphs_to_docx(title, paras, doc=None, super_title=None):
     for para in paras:
         if isinstance(para, dict):
             logging.info('Got image of width %s', para.get('width'))
-            doc.add_picture(para['img'], width=para.get('width'))
-            para['img'].close()
+            try:
+                doc.add_picture(para['img'], width=para.get('width'))
+            except Exception:
+                logging.error(
+                        'Exception while adding picture:',
+                        exc_info=True,
+                )
+            finally:
+                try:
+                    para['img'].close()
+                except Exception:
+                    logging.error(
+                            'Exception while closing picture:',
+                            exc_info=True,
+                    )
         else:
             doc.add_paragraph(para)
 
