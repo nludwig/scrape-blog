@@ -69,6 +69,8 @@ def cull_links(
     patterns_to_remove=(
             'open-thread',
             'survey',
+            'links-',
+            '/ot',
     ),
     remove_none=True,
     remove_only_year=True,
