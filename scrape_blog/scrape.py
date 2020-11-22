@@ -200,23 +200,32 @@ def textify_text_imgify_imgs(
                     break
 
             if src_url is not None:
-                response = requests.get(
-                        src_url,
-                        headers=headers,
-                        stream=True,
-                )
-                if response.status_code == 200:
-                    f = tempfile.TemporaryFile()
-                    response.raw.decode_content = True
-                    shutil.copyfileobj(response.raw, f)
-                    yield {'img': f, 'width': img_html.get('width')}
-                else:
-                    logging.error(
-                            'Could not get image from %s; code %d',
+                try:
+                    response = requests.get(
                             src_url,
-                            response.status_code,
+                            headers=headers,
+                            stream=True,
+                    )
+                except Exception:
+                    logging.error(
+                            "Exception getting image from URL %s:",
+                            src_url,
+                            exc_info=True,
                     )
                     yield None
+                else:
+                    if response.status_code == 200:
+                        f = tempfile.TemporaryFile()
+                        response.raw.decode_content = True
+                        shutil.copyfileobj(response.raw, f)
+                        yield {'img': f, 'width': img_html.get('width')}
+                    else:
+                        logging.error(
+                                'Could not get image from %s; code %d',
+                                src_url,
+                                response.status_code,
+                        )
+                        yield None
             else:
                 yield None
 
